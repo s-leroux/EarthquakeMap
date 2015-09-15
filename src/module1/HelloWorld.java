@@ -4,6 +4,7 @@ import processing.core.PApplet;
 import de.fhpotsdam.unfolding.UnfoldingMap;
 import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.providers.AbstractMapProvider;
+import de.fhpotsdam.unfolding.providers.GeoMapApp;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.utils.MapUtils;
@@ -43,17 +44,17 @@ public class HelloWorld extends PApplet
 
 		// This sets the background color for the Applet.  
 		// Play around with these numbers and see what happens!
-		this.background(200, 200, 200);
+		this.background(200, 200, 220); // SL: color changed as per assignment 1
 		
 		// Select a map provider
-		AbstractMapProvider provider = new Google.GoogleTerrainProvider();
+		AbstractMapProvider provider1 = new Google.GoogleTerrainProvider();
 		// Set a zoom level
 		int zoomLevel = 10;
 		
 		if (offline) {
 			// If you are working offline, you need to use this provider 
 			// to work with the maps that are local on your computer.  
-			provider = new MBTilesMapProvider(mbTilesString);
+			provider1 = new MBTilesMapProvider(mbTilesString);
 			// 3 is the maximum zoom level for working offline
 			zoomLevel = 3;
 		}
@@ -65,7 +66,7 @@ public class HelloWorld extends PApplet
 		// The 6th argument specifies the map provider.  
 		// There are several providers built-in.
 		// Note if you are working offline you must use the MBTilesMapProvider
-		map1 = new UnfoldingMap(this, 50, 50, 350, 500, provider);
+		map1 = new UnfoldingMap(this, 50, 50, 350, 500, provider1);
 
 		// The next line zooms in and centers the map at 
 	    // 32.9 (latitude) and -117.2 (longitude)
@@ -77,13 +78,23 @@ public class HelloWorld extends PApplet
 		// TODO: Add code here that creates map2 
 		// Then you'll modify draw() below
 
+		// SL: Per requirement in assignment, use a different provider here 
+		AbstractMapProvider provider2 = new GeoMapApp.TopologicalGeoMapProvider();
+        map2 = new UnfoldingMap(this, 400, 50, 350, 500, provider2);
+        map2.zoomAndPanTo(zoomLevel, new Location(47.75f, -3.36f)); // SL: Lorient (FR)
+        MapUtils.createDefaultEventDispatcher(this, map2);
 	}
 
 	/** Draw the Applet window.  */
 	public void draw() {
+	    this.noStroke();
+	    this.fill(190,190,210);
+	    this.rect(60, 60, 700, 500);
+	    
 		// So far we only draw map1...
 		// TODO: Add code so that both maps are displayed
-		map1.draw();
+        map1.draw();
+        map2.draw();
 	}
 
 	
