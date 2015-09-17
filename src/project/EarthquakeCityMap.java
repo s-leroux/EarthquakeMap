@@ -2,7 +2,6 @@ package project;
 
 //Java utilities libraries
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,6 @@ import java.util.Map.Entry;
 
 //Processing library
 import processing.core.PApplet;
-import processing.core.PGraphics;
 //Unfolding libraries
 import de.fhpotsdam.unfolding.UnfoldingMap;
 import de.fhpotsdam.unfolding.marker.AbstractShapeMarker;
@@ -27,149 +25,6 @@ import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.utils.MapUtils;
 //Parsing library
 import parsing.ParseFeed;
-
-class CityMarker extends SimplePointMarker {
-    
-    // The size of the triangle marker
-    // It's a good idea to use this variable in your draw method
-    public static final int TRI_SIZE = 5;  
-    
-    public CityMarker(Location location) {
-        super(location);
-    }
-    
-    
-    public CityMarker(Feature city) {
-        super(((PointFeature)city).getLocation(), city.getProperties());
-    }
-    
-    
-    // HINT: pg is the graphics object on which you call the graphics
-    // methods.  e.g. pg.fill(255, 0, 0) will set the color to red
-    // x and y are the center of the object to draw. 
-    // They will be used to calculate the coordinates to pass
-    // into any shape drawing methods.  
-    // e.g. pg.rect(x, y, 10, 10) will draw a 10x10 square
-    // whose upper left corner is at position x, y
-    /**
-     * Implementation of method to draw marker on the map.
-     */
-    public void draw(PGraphics pg, float x, float y) {
-        // Save previous drawing style
-        pg.pushStyle();
-        
-        pg.fill(0xFF8F00FF);
-        pg.triangle(x-5, y+5, x+5, y+5, x, y-5);
-        // TODO: Add code to draw a triangle to represent the CityMarker
-        
-        // Restore previous drawing style
-        pg.popStyle();
-    }
-    
-    /* Local getters for some city properties.  You might not need these 
-     * in module 4.      */
-    public String getCity()
-    {
-        return getStringProperty("name");
-    }
-    
-    public String getCountry()
-    {
-        return getStringProperty("country");
-    }
-    
-    public float getPopulation()
-    {
-        return Float.parseFloat(getStringProperty("population"));
-    }    
-}
-
-
-abstract class EarthquakeMarker extends SimplePointMarker {
-    private int radius = 30;
-    private final float magnitude;
-    private final float depth;
-    private final int   age;
-    
-    static final int colors[] = {
-      /*  0 */ 0x005AFF05,
-      /*  1 */ 0x007AF005,
-      /*  2 */ 0x00B1F005,
-      /*  3 */ 0x00D0F005,
-      /*  4 */ 0x00F0E005,
-      /*  5 */ 0x00F09D05,
-      /*  6 */ 0x00F07E05,
-      /*  7 */ 0x00F06305,
-      /*  8 */ 0x00F04005,
-      /*  9 */ 0x00F02C05,
-      /* 10 */ 0x00F00505
-    };
-    
-    static final Map<String, Integer> ageToNum;
-    static {
-        Map<String, Integer> m = new HashMap<>();
-        m.put("Past Hour", 3);
-        m.put("Past Day", 2);
-        m.put("Past Week", 1);
-        m.put("Past Month", 0);
-        
-        ageToNum = Collections.unmodifiableMap(m);
-    }
-    
-    public EarthquakeMarker(Location location, float magnitude, float depth, String age) {
-      super(location);
-      
-      this.setRadius(Math.round(15+3*magnitude));
-      this.magnitude = magnitude;
-      this.depth = depth;
-      this.age = ageToNum.getOrDefault(age, 0);
-    }
-    
-    public int getColor() {
-        float color = PApplet.map(magnitude, 0, 10, 0, 10);
-        return (50*(age+1) << 24) | colors[Math.round(color)];
-    }
-
-    public int getRadius() {
-        return radius;
-    }
-}
-
-class LandEarthquakeMarker extends EarthquakeMarker {
-    public LandEarthquakeMarker(Location location, float magnitude, float depth,
-            String age) {
-        super(location, magnitude, depth, age);
-    }
-
-    public void draw(PGraphics pg, float x, float y) {
-        pg.pushStyle();
-        pg.noStroke();
-        
-        pg.fill(getColor());
-        pg.ellipse(x, y, getRadius(), getRadius());
-        //pg.fill(getColor() | 0xFFFFFF);
-        //pg.ellipse(x, y, getRadius()-10, getRadius()-10);
-        pg.popStyle();
-      }    
-}
-
-class OtherEarthquakeMarker extends EarthquakeMarker {
-    public OtherEarthquakeMarker(Location location, float magnitude, float depth,
-            String age) {
-        super(location, magnitude, depth, age);
-    }
-
-    public void draw(PGraphics pg, float x, float y) {
-        pg.pushStyle();
-        pg.noStroke();
-        
-        pg.fill(getColor());
-        pg.ellipse(x, y, getRadius(), getRadius());
-        pg.fill(getColor() | 0xFFFFFF);
-        pg.ellipse(x, y, getRadius()-10, getRadius()-10);
-        pg.popStyle();
-      }    
-}
 
 /** EarthquakeCityMap
  * An application with an interactive map displaying earthquake data.
@@ -266,7 +121,7 @@ public class EarthquakeCityMap extends PApplet {
         
         return (isLand(pointFeature)) ?
                   new LandEarthquakeMarker(pointFeature.location, mag, depth, age) :
-                  new OtherEarthquakeMarker(pointFeature.location, mag, depth, age)   ;
+                  new OceanEarthquakeMarker(pointFeature.location, mag, depth, age)   ;
 	}
 	
 	public void draw() {
