@@ -10,7 +10,7 @@ import de.fhpotsdam.unfolding.utils.GeoUtils;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 
-abstract class EarthquakeMarker extends CommonMarker {
+abstract class EarthquakeMarker extends CommonMarker implements Comparable<EarthquakeMarker> {
     // constants for distance
     protected static final float kmPerMile = 1.6f;
     
@@ -48,7 +48,7 @@ abstract class EarthquakeMarker extends CommonMarker {
                             HashMap<String,Object> properties) {
       super(location, properties);
       
-      this.setRadius(Math.round(5+3*magnitude));
+      this.setRadius(Math.round(2+3*magnitude));
       this.magnitude = magnitude;
       this.depth = depth;
       this.age = ageToNum.getOrDefault(age, 0);
@@ -109,4 +109,25 @@ abstract class EarthquakeMarker extends CommonMarker {
         
     } 
     
+    @Override
+    public int compareTo(EarthquakeMarker o) {
+        if (magnitude < o.magnitude)
+            return +1;
+        else if (magnitude > o.magnitude)
+            return -1;
+        
+        // else
+        int c = getCountry().compareTo(o.getCountry());
+        
+        if (c != 0)
+            return 0;
+        
+        // else
+        if (depth > o.depth)
+            return +1;
+        else if (depth < o.depth)
+            return -1;
+        else
+            return 0;
+    }
 }

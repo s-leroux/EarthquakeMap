@@ -2,6 +2,8 @@ package project;
 
 //Java utilities libraries
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +65,7 @@ public class EarthquakeCityMap extends PApplet {
 
     private List<Marker> countryMarkers;
     private ArrayList<Marker> cityMarkers;
-    private ArrayList<Marker> quakeMarkers;
+    private ArrayList<EarthquakeMarker> quakeMarkers;
     private Marker            lastSelected;
     private Marker            lastClicked;
 
@@ -72,7 +74,7 @@ public class EarthquakeCityMap extends PApplet {
 	
 	public void setup() {
 		size(950, 600, OPENGL);
-
+		
 		if (offline) {
 		    map = new UnfoldingMap(this, 200, 50, 700, 500, new MBTilesMapProvider(mbTilesString));
 		    earthquakesURL = "2.5_week.atom"; 	// Same feed, saved Aug 7, 2015, for working offline
@@ -82,9 +84,6 @@ public class EarthquakeCityMap extends PApplet {
 			// IF YOU WANT TO TEST WITH A LOCAL FILE, uncomment the next line
 			//earthquakesURL = "2.5_week.atom";
 		}
-	
-  earthquakesURL = "quiz1.atom";
-
 		
 	    map.zoomToLevel(2);
 	    MapUtils.createDefaultEventDispatcher(this, map);	
@@ -103,25 +102,38 @@ public class EarthquakeCityMap extends PApplet {
 	    // The List you will populate with new SimplePointMarkers
 	    List<Marker> markers = new ArrayList<Marker>();
 
+	    // earthquakesURL = "quiz2.atom";
 	    earthquakes = ParseFeed.parseEarthquake(this, earthquakesURL);
 	    
 	    
-	    quakeMarkers = new ArrayList<Marker>();
+	    quakeMarkers = new ArrayList<>();
 	    for (PointFeature pointFeature : earthquakes) {
-            quakeMarkers.add(createMarker(pointFeature));
+	        EarthquakeMarker marker = createMarker(pointFeature);
+            quakeMarkers.add(marker);
+            map.addMarker(marker);
             System.out.println(pointFeature.getProperties());
         }
 	    
-        map.addMarkers(quakeMarkers);
         map.addMarkers(cityMarkers);
 	    
 	    printQuakes();
+	    sortAndPrint(100);
 	}
 		
-	// A suggested helper method that takes in an earthquake feature and 
-	// returns a SimplePointMarker for that earthquake
+	private void sortAndPrint(int numToPrint) {
+	    EarthquakeMarker[] array = new EarthquakeMarker[quakeMarkers.size()];
+	    
+	    Arrays.sort(quakeMarkers.toArray(array));
+	    
+	    for(int i = 0; i < numToPrint && i < array.length; ++i) {
+	        System.out.println(array[i].getTitle());
+	    }
+    }
+
+    // A suggested helper method that takes in an earthquake feature and 
+	// returns a EarthquakeMarker for that earthquake
 	// TODO: Implement this method and call it from setUp, if it helps
-	private SimplePointMarker createMarker(PointFeature pointFeature)
+	private EarthquakeMarker createMarker(PointFeature pointFeature)
 	{
         float mag = Float.parseFloat(pointFeature.getProperty("magnitude").toString());
         float depth = Float.parseFloat(pointFeature.getProperty("depth").toString());
@@ -168,7 +180,11 @@ public class EarthquakeCityMap extends PApplet {
                                                                 (float)marker.threatCircle());
             ScreenPosition pos = map.getScreenPosition(hintPoint);
             if (prev != null) {
-                pg.line(prev.x, prev.y, pos.x, pos.y);
+                // Do not draw a line across the earth projection boundaries
+                // (arbitrary 100px limit)
+                if (Math.abs(prev.x-pos.x) < 100) {
+                    pg.line(prev.x, prev.y, pos.x, pos.y);
+                }
             }
             prev = pos;
         }
@@ -296,7 +312,7 @@ public class EarthquakeCityMap extends PApplet {
     // set the lastSelected to be the first marker found under the cursor
     // Make sure you do not select two markers.
     // 
-    private void selectMarkerIfHover(List<Marker> markers, float x, float y)
+    private void selectMarkerIfHover(List<? extends Marker> markers, float x, float y)
     {
         if (lastSelected == null) {
             Marker marker = findMarker(markers, x, y);
@@ -307,10 +323,10 @@ public class EarthquakeCityMap extends PApplet {
         }
     }
 
-    private Marker findMarker(List<Marker> markers, float x, float y)
+    private Marker findMarker(List<? extends Marker> markers, float x, float y)
     {
         for (Marker marker : markers) {
-            if (marker.isInside(map, x, y)) {
+            if (!marker.isHidden() && marker.isInside(map, x, y)) {
                 return marker;
             }
         }
