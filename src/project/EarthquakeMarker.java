@@ -6,6 +6,7 @@ import java.util.Map;
 
 import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
+import de.fhpotsdam.unfolding.utils.GeoUtils;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 
@@ -107,4 +108,5 @@ abstract class EarthquakeMarker extends CommonMarker {
         // TODO Auto-generated method stub
         
     } 
+    
 }

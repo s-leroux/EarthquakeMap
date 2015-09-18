@@ -58,9 +58,9 @@ public abstract class CommonMarker extends SimplePointMarker {
         
         pg.stroke(0xFFA89E6F);
         pg.fill(0xFFEBDFAE);
-        pg.rect(x-5, y-5-pg.textAscent(), tw + 10, th+10);
+        pg.rect(x-5-tw/2, y-5-pg.textAscent(), tw + 10, th+10);
         pg.fill(0,0,0);
-        pg.text(title, x, y);
+        pg.text(title, x-tw/2, y);
         pg.popStyle();
     }
 }

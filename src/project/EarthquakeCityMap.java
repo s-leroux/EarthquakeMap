@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 //Processing library
 import processing.core.PApplet;
+import processing.core.PGraphics;
 //Unfolding libraries
 import de.fhpotsdam.unfolding.UnfoldingMap;
 import de.fhpotsdam.unfolding.marker.AbstractShapeMarker;
@@ -22,7 +23,9 @@ import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
+import de.fhpotsdam.unfolding.utils.GeoUtils;
 import de.fhpotsdam.unfolding.utils.MapUtils;
+import de.fhpotsdam.unfolding.utils.ScreenPosition;
 import module5.CommonMarker;
 //Parsing library
 import parsing.ParseFeed;
@@ -132,8 +135,46 @@ public class EarthquakeCityMap extends PApplet {
 	public void draw() {
 	    background(127);
 	    map.draw();
+	    
+	    // TODO: this is ugly !
+	    // Unfortunately, a marker instance does not have a reference to its map
+	    // when drawing, so it cannot easily maps arbitrary location to screen positions
+        if (lastClicked instanceof EarthquakeMarker)
+            showThreadCircle(g, (EarthquakeMarker) lastClicked);
+        else if (lastSelected instanceof EarthquakeMarker)
+            showThreadCircle(g, (EarthquakeMarker) lastSelected);
+	 
 	    addKey();
 	}
+	
+    public void showThreadCircle(PGraphics pg, EarthquakeMarker marker) {        
+        pg.pushStyle();
+        
+        
+        pg.clip(map.mapDisplay.offsetX, map.mapDisplay.offsetY,
+                map.mapDisplay.getWidth(), map.mapDisplay.getHeight());
+        
+        int grey = ((second()*1000+millis())/10) % 100-50;
+        if (grey < 0)
+            grey = -grey;
+        
+        pg.stroke(3*grey);
+        pg.strokeWeight(3);
+        
+        ScreenPosition prev = null;
+        for(float a = 0; a <= 360; a += 5) {
+            Location hintPoint = GeoUtils.getDestinationLocation(marker.getLocation(), 
+                                                                a, 
+                                                                (float)marker.threatCircle());
+            ScreenPosition pos = map.getScreenPosition(hintPoint);
+            if (prev != null) {
+                pg.line(prev.x, prev.y, pos.x, pos.y);
+            }
+            prev = pos;
+        }
+        pg.noClip();
+        pg.popStyle();
+    }
 
 
 	// helper method to draw key in GUI
