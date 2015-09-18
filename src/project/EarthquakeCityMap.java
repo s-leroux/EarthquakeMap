@@ -191,6 +191,14 @@ public class EarthquakeCityMap extends PApplet {
             rect(70,70+20*i,40,20);
             text(Integer.toString(i), 120, 85+20*i);
         }
+	    
+        fill(0xFF8F00FF);
+        final int TRI_SIZE = 5;
+        final int x = 90;
+        final int y = 320;
+        triangle(x-TRI_SIZE, y+TRI_SIZE, x+TRI_SIZE, y+TRI_SIZE, x, y-TRI_SIZE);
+        text("City", 100, y+3);
+
 	}
 	
 	   
