@@ -13,7 +13,7 @@ abstract class EarthquakeMarker extends CommonMarker {
     // constants for distance
     protected static final float kmPerMile = 1.6f;
     
-    private int radius = 30;
+//    private int radius = 30;
     private final float magnitude;
     private final float depth;
     private final int   age;
@@ -47,7 +47,7 @@ abstract class EarthquakeMarker extends CommonMarker {
                             HashMap<String,Object> properties) {
       super(location, properties);
       
-      this.setRadius(Math.round(15+3*magnitude));
+      this.setRadius(Math.round(5+3*magnitude));
       this.magnitude = magnitude;
       this.depth = depth;
       this.age = ageToNum.getOrDefault(age, 0);
@@ -64,7 +64,7 @@ abstract class EarthquakeMarker extends CommonMarker {
         return (isSelected()) ? 0xFF000000 : getColor();
     }
 
-    public int getRadius() {
+    public float getRadius() {
         return radius;
     }
     

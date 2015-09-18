@@ -18,9 +18,9 @@ class OceanEarthquakeMarker extends EarthquakeMarker {
         pg.noStroke();
         
         pg.fill(getColor());
-        pg.ellipse(x, y, getRadius(), getRadius());
+        pg.ellipse(x, y, getRadius()*2, getRadius()*2);
         pg.fill(getColor() | 0xFFFFFF);
-        pg.ellipse(x, y, getRadius()-10, getRadius()-10);
+        pg.ellipse(x, y, getRadius()*2-10, getRadius()*2-10);
         pg.popStyle();
       }
    
