@@ -1,15 +1,19 @@
 package project;
 
+import java.util.HashMap;
+
 import de.fhpotsdam.unfolding.geo.Location;
 import processing.core.PGraphics;
 
 class LandEarthquakeMarker extends EarthquakeMarker {
     public LandEarthquakeMarker(Location location, float magnitude, float depth,
-            String age) {
-        super(location, magnitude, depth, age);
+            String age,
+            HashMap<String,Object> properties) {
+        super(location, magnitude, depth, age, properties);
     }
 
-    public void draw(PGraphics pg, float x, float y) {
+    @Override
+    public void drawMarker(PGraphics pg, float x, float y) {
         pg.pushStyle();
         pg.noStroke();
         
@@ -18,5 +22,7 @@ class LandEarthquakeMarker extends EarthquakeMarker {
         //pg.fill(getColor() | 0xFFFFFF);
         //pg.ellipse(x, y, getRadius()-10, getRadius()-10);
         pg.popStyle();
-      }    
+      }
+
+   
 }

@@ -6,7 +6,7 @@ import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 import processing.core.PGraphics;
 
-class CityMarker extends SimplePointMarker {
+class CityMarker extends CommonMarker {
     
     // The size of the triangle marker
     // It's a good idea to use this variable in your draw method
@@ -32,12 +32,12 @@ class CityMarker extends SimplePointMarker {
     /**
      * Implementation of method to draw marker on the map.
      */
-    public void draw(PGraphics pg, float x, float y) {
+    public void drawMarker(PGraphics pg, float x, float y) {
         // Save previous drawing style
         pg.pushStyle();
         
         pg.fill(0xFF8F00FF);
-        pg.triangle(x-5, y+5, x+5, y+5, x, y-5);
+        pg.triangle(x-TRI_SIZE, y+TRI_SIZE, x+TRI_SIZE, y+TRI_SIZE, x, y-TRI_SIZE);
         // TODO: Add code to draw a triangle to represent the CityMarker
         
         // Restore previous drawing style
@@ -59,5 +59,11 @@ class CityMarker extends SimplePointMarker {
     public float getPopulation()
     {
         return Float.parseFloat(getStringProperty("population"));
+    }
+
+
+    @Override
+    public String getTitle() {
+        return getCity() + " - Pop: " + getPopulation();
     }    
 }

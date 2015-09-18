@@ -23,6 +23,7 @@ import de.fhpotsdam.unfolding.marker.SimplePointMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.utils.MapUtils;
+import module5.CommonMarker;
 //Parsing library
 import parsing.ParseFeed;
 
@@ -58,8 +59,11 @@ public class EarthquakeCityMap extends PApplet {
     private String countryFile = "countries.geo.json";
 
     private List<Marker> countryMarkers;
-
     private ArrayList<Marker> cityMarkers;
+    private ArrayList<Marker> quakeMarkers;
+    private Marker            lastSelected;
+    private Marker            lastClicked;
+
 
     private List<PointFeature> earthquakes;
 	
@@ -99,13 +103,14 @@ public class EarthquakeCityMap extends PApplet {
 	    earthquakes = ParseFeed.parseEarthquake(this, earthquakesURL);
 	    
 	    
+	    quakeMarkers = new ArrayList<Marker>();
 	    for (PointFeature pointFeature : earthquakes) {
-
-            map.addMarker(createMarker(pointFeature));
+            quakeMarkers.add(createMarker(pointFeature));
             System.out.println(pointFeature.getProperties());
         }
 	    
-	    map.addMarkers(cityMarkers);
+        map.addMarkers(quakeMarkers);
+        map.addMarkers(cityMarkers);
 	    
 	    printQuakes();
 	}
@@ -120,8 +125,8 @@ public class EarthquakeCityMap extends PApplet {
         String age = pointFeature.getProperty("age").toString();
         
         return (isLand(pointFeature)) ?
-                  new LandEarthquakeMarker(pointFeature.location, mag, depth, age) :
-                  new OceanEarthquakeMarker(pointFeature.location, mag, depth, age)   ;
+                  new LandEarthquakeMarker(pointFeature.location, mag, depth, age, pointFeature.getProperties()) :
+                  new OceanEarthquakeMarker(pointFeature.location, mag, depth, age, pointFeature.getProperties())   ;
 	}
 	
 	public void draw() {
@@ -218,6 +223,109 @@ public class EarthquakeCityMap extends PApplet {
         }
 
     }
+    
+    /** Event handler that gets called automatically when the 
+     * mouse moves.
+     */
+    @Override
+    public void mouseMoved()
+    {
+        // clear the last selection
+        if (lastSelected != null) {
+            lastSelected.setSelected(false);
+            lastSelected = null;
+        
+        }
+        float x = mouseX;
+        float y = mouseY;
+        
+        selectMarkerIfHover(quakeMarkers, x, y);
+        selectMarkerIfHover(cityMarkers, x, y);
+    }
 
+    // If there is a marker under the cursor, and lastSelected is null 
+    // set the lastSelected to be the first marker found under the cursor
+    // Make sure you do not select two markers.
+    // 
+    private void selectMarkerIfHover(List<Marker> markers, float x, float y)
+    {
+        if (lastSelected == null) {
+            Marker marker = findMarker(markers, x, y);
+            if (marker != null) {
+                lastSelected = marker;
+                lastSelected.setSelected(true);
+            }
+        }
+    }
 
+    private Marker findMarker(List<Marker> markers, float x, float y)
+    {
+        for (Marker marker : markers) {
+            if (marker.isInside(map, x, y)) {
+                return marker;
+            }
+        }
+        return null;
+    }
+
+    
+    /** The event handler for mouse clicks
+     * It will display an earthquake and its threat circle of cities
+     * Or if a city is clicked, it will display all the earthquakes 
+     * where the city is in the threat circle
+     */
+    @Override
+    public void mouseClicked()
+    {
+        if (lastClicked != null) {
+            lastClicked = null;
+            unhideMarkers();
+            return;
+        }
+        
+        float x = mouseX;
+        float y = mouseY;
+        
+
+        lastClicked = findMarker(quakeMarkers, x, y);
+        if (lastClicked != null) {
+            // Hide all other earthquake, and show only city in the thread circle
+            EarthquakeMarker earthquake = (EarthquakeMarker) lastClicked;
+            for (Marker m : quakeMarkers) {
+                m.setHidden(m != earthquake);
+            }
+            for (Marker city : cityMarkers) {
+                city.setHidden(city.getDistanceTo(earthquake.getLocation())> earthquake.threatCircle());
+            }
+        }
+        else {
+            lastClicked = findMarker(cityMarkers, x, y);
+            if (lastClicked != null) {
+                // Hide all other cities, and show all threatening earthquakes
+                for(Marker city: cityMarkers) {
+                    city.setHidden(city != lastClicked);
+                }
+                for(Marker m : quakeMarkers) {
+                    EarthquakeMarker earthquake = (EarthquakeMarker)m;
+                    earthquake.setHidden(lastClicked.getDistanceTo(earthquake.getLocation())> earthquake.threatCircle());
+
+                    
+                }
+                
+            }
+        }
+        
+    }
+    
+    
+    // loop over and unhide all markers
+    private void unhideMarkers() {
+        for(Marker marker : quakeMarkers) {
+            marker.setHidden(false);
+        }
+            
+        for(Marker marker : cityMarkers) {
+            marker.setHidden(false);
+        }
+    }
 }
