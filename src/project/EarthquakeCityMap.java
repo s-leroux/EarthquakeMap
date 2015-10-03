@@ -7,7 +7,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
+
+import org.omg.CORBA.FloatSeqHelper;
 
 //Processing library
 import processing.core.PApplet;
@@ -64,23 +67,25 @@ public class EarthquakeCityMap extends PApplet {
     private String countryFile = "countries.geo.json";
 
     private List<Marker> countryMarkers;
-    private ArrayList<Marker> cityMarkers;
+    private ArrayList<POIMarker> poiMarkers;
     private ArrayList<EarthquakeMarker> quakeMarkers;
     private Marker            lastSelected;
     private Marker            lastClicked;
 
 
     private List<PointFeature> earthquakes;
+
+    private int threatCount;
 	
 	public void setup() {
-		size(950, 600, OPENGL);
+		size(950, 630, OPENGL);
 		
 		if (offline) {
-		    map = new UnfoldingMap(this, 200, 50, 700, 500, new MBTilesMapProvider(mbTilesString));
+		    map = new UnfoldingMap(this, 200, 50, 700, 530, new MBTilesMapProvider(mbTilesString));
 		    earthquakesURL = "2.5_week.atom"; 	// Same feed, saved Aug 7, 2015, for working offline
 		}
 		else {
-			map = new UnfoldingMap(this, 200, 50, 700, 500, new Google.GoogleMapProvider());
+			map = new UnfoldingMap(this, 200, 50, 700, 530, new Google.GoogleMapProvider());
 			// IF YOU WANT TO TEST WITH A LOCAL FILE, uncomment the next line
 			//earthquakesURL = "2.5_week.atom";
 		}
@@ -94,27 +99,39 @@ public class EarthquakeCityMap extends PApplet {
         
         //      STEP2: load cities
         List<Feature> cities = GeoJSONReader.loadData(this, cityFile);
-        cityMarkers = new ArrayList<Marker>();
+        poiMarkers = new ArrayList<>();
         for(Feature city : cities) {
-          cityMarkers.add(new CityMarker(city));
+            CityMarker marker = new CityMarker(city); 
+            marker.setProperty("type", "city");
+            poiMarkers.add(marker);
         }
 			
-	    // The List you will populate with new SimplePointMarkers
-	    List<Marker> markers = new ArrayList<Marker>();
-
-	    // earthquakesURL = "quiz2.atom";
+        /*
+        List<PointFeature> airports = ParseFeed.parseAirports(this, "airports.dat");
+        for(Feature airport : airports) {
+            AirportMarker marker = new AirportMarker(airport);
+            poiMarkers.add(marker);
+        }
+        */
+                
+        // STEP 3: create earthquake markers
+	    earthquakesURL = "quiz2.atom";
 	    earthquakes = ParseFeed.parseEarthquake(this, earthquakesURL);
 	    
 	    
 	    quakeMarkers = new ArrayList<>();
 	    for (PointFeature pointFeature : earthquakes) {
 	        EarthquakeMarker marker = createMarker(pointFeature);
+	        marker.setProperty("type", "earthquake");
             quakeMarkers.add(marker);
             map.addMarker(marker);
             System.out.println(pointFeature.getProperties());
         }
 	    
-        map.addMarkers(cityMarkers);
+	    // STEP 4: add city markers to the map
+	    for (POIMarker marker : poiMarkers) {
+	        map.addMarker(marker);            
+        }
 	    
 	    printQuakes();
 	    sortAndPrint(100);
@@ -145,24 +162,56 @@ public class EarthquakeCityMap extends PApplet {
 	}
 	
 	public void draw() {
-	    background(127);
+	    threatCount = 0;
+	    EarthquakeMarker quake = null;
+	    if (lastClicked instanceof EarthquakeMarker)
+	        quake = (EarthquakeMarker)lastClicked;
+	    else if (lastSelected instanceof EarthquakeMarker)
+            quake = (EarthquakeMarker)lastSelected;
+	   
+	    TreeMap<Double,POIMarker> threatened = new TreeMap<>();
+	    
+        for (POIMarker city : poiMarkers) {
+            boolean threat = (quake != null) 
+                                && (city.getDistanceTo(quake.getLocation())<= quake.threatCircle());
+            city.setThreatened(threat);
+            if (threat) {
+                threatCount++;
+                if (threatCount<=5)
+                    threatened.put(city.getDistanceTo(quake.getLocation()), city);
+            }
+	    }
+	    
+	    background(200);
 	    map.draw();
 	    
 	    // TODO: this is ugly !
 	    // Unfortunately, a marker instance does not have a reference to its map
 	    // when drawing, so it cannot easily maps arbitrary location to screen positions
-        if (lastClicked instanceof EarthquakeMarker)
-            showThreadCircle(g, (EarthquakeMarker) lastClicked);
-        else if (lastSelected instanceof EarthquakeMarker)
-            showThreadCircle(g, (EarthquakeMarker) lastSelected);
+        if (quake != null)
+            showThreadCircle(g, quake);
 	 
-	    addKey();
+	    addKey(threatened);
 	}
 	
     public void showThreadCircle(PGraphics pg, EarthquakeMarker marker) {        
         pg.pushStyle();
         
+        pg.stroke(0);
+        pg.strokeWeight(3);
         
+        // show reticle
+        ScreenPosition markerPos = map.getScreenPosition(marker.getLocation());
+        line(markerPos.x, map.mapDisplay.offsetY-5,
+                markerPos.x, map.mapDisplay.offsetY);
+        line(map.mapDisplay.offsetX-5, markerPos.y,
+                map.mapDisplay.offsetX, markerPos.y);
+        line(markerPos.x, map.mapDisplay.getHeight()+map.mapDisplay.offsetY+5,
+                markerPos.x, map.mapDisplay.getHeight()+map.mapDisplay.offsetY);
+        line(map.mapDisplay.getWidth()+map.mapDisplay.offsetX+5, markerPos.y,
+                map.mapDisplay.getWidth()+map.mapDisplay.offsetX, markerPos.y);
+        
+
         pg.clip(map.mapDisplay.offsetX, map.mapDisplay.offsetY,
                 map.mapDisplay.getWidth(), map.mapDisplay.getHeight());
         
@@ -171,7 +220,7 @@ public class EarthquakeCityMap extends PApplet {
             grey = -grey;
         
         pg.stroke(3*grey);
-        pg.strokeWeight(3);
+
         
         ScreenPosition prev = null;
         for(float a = 0; a <= 360; a += 5) {
@@ -188,6 +237,10 @@ public class EarthquakeCityMap extends PApplet {
             }
             prev = pos;
         }
+        
+        ScreenPosition qpos = map.getScreenPosition(marker.getLocation());
+        marker.draw(g, qpos.x, qpos.y);
+        
         pg.noClip();
         pg.popStyle();
     }
@@ -195,26 +248,83 @@ public class EarthquakeCityMap extends PApplet {
 
 	// helper method to draw key in GUI
 	// TODO: Implement this method to draw the key
-	private void addKey() 
+	private void addKey(TreeMap<Double, POIMarker> threatened) 
 	{	
 	    fill(255,255,255);
-	    rect(50,50,100,300);
+	    rect(50,50,115,400);
 		// Remember you can use Processing's graphics methods here
+        textAlign(RIGHT);
 	    for (int i = 0; i < EarthquakeMarker.colors.length; i++) {
             int color = EarthquakeMarker.colors[i];
             
             fill(color|0xFF000000);
             rect(70,70+20*i,40,20);
-            text(Integer.toString(i), 120, 85+20*i);
+            text(Integer.toString(i), 120+12, 85+20*i);
         }
 	    
-        fill(0xFF8F00FF);
         final int TRI_SIZE = 5;
-        final int x = 90;
-        final int y = 320;
+        final int x = 70;
+        int y = 310;
+        fill(0xFF8F00FF);
         triangle(x-TRI_SIZE, y+TRI_SIZE, x+TRI_SIZE, y+TRI_SIZE, x, y-TRI_SIZE);
+        textAlign(LEFT);
         text("City", 100, y+3);
 
+        y += 20;
+        fill(0xFFF00000);
+        triangle(x-TRI_SIZE, y+TRI_SIZE, x+TRI_SIZE, y+TRI_SIZE, x, y-TRI_SIZE);
+        text("Threat. " + ((threatCount > 0) ? Integer.toString(threatCount) : ""), 100, y+3);
+        
+        // fill(0xFF000000);
+        for (Map.Entry<Double, POIMarker> entry : threatened.entrySet()) {
+            y += 20;
+            textAlign(RIGHT);
+            text(String.format("%6.1f", entry.getKey()),100,y+3);
+            textAlign(LEFT);
+            text(String.format("%s", entry.getValue().getName()), 100+5, y+3);
+        }
+        
+        Marker marker = lastClicked;
+        if (marker == null)
+            marker = lastSelected;
+        
+        fill(255,255,255);
+        rect(50,460,115,125);
+        if (marker != null) {
+            Location location = marker.getLocation();
+            String name = (String) marker.getProperty("title");
+            String type = (String) marker.getProperty("type");
+            
+            if (name == null) {
+                name = "";
+            }
+            if (type == null) {
+                type = "";
+            }
+            
+            float lon = location.getLon();
+            float lat = location.getLat();
+            
+            fill(0);
+            textAlign(LEFT);
+            text(type, x, 475+0*17);
+            text(name, x, 475+0*17+5, 80, 80);
+            textAlign(RIGHT);
+            text(floatToDMS(lon), x+80, 475+5*17);
+            text(floatToDMS(lat), x+80, 475+6*17);
+        }
+	}
+	
+	private String floatToDMS(float v) {
+	    char sign = (v < 0) ? '-' : '+';
+	    
+	    v = Math.abs(v);
+	    int d = (int)v;
+	    v = (v-d)*60;
+	    int m = (int)v;
+        v = (v-m)*60;
+        
+        return String.format("%c%d°%02d'%05.2f\"", sign,d,m,v);
 	}
 	
 	   
@@ -305,7 +415,7 @@ public class EarthquakeCityMap extends PApplet {
         float y = mouseY;
         
         selectMarkerIfHover(quakeMarkers, x, y);
-        selectMarkerIfHover(cityMarkers, x, y);
+        selectMarkerIfHover(poiMarkers, x, y);
     }
 
     // If there is a marker under the cursor, and lastSelected is null 
@@ -359,15 +469,15 @@ public class EarthquakeCityMap extends PApplet {
             for (Marker m : quakeMarkers) {
                 m.setHidden(m != earthquake);
             }
-            for (Marker city : cityMarkers) {
+            for (Marker city : poiMarkers) {
                 city.setHidden(city.getDistanceTo(earthquake.getLocation())> earthquake.threatCircle());
             }
         }
         else {
-            lastClicked = findMarker(cityMarkers, x, y);
+            lastClicked = findMarker(poiMarkers, x, y);
             if (lastClicked != null) {
                 // Hide all other cities, and show all threatening earthquakes
-                for(Marker city: cityMarkers) {
+                for(Marker city: poiMarkers) {
                     city.setHidden(city != lastClicked);
                 }
                 for(Marker m : quakeMarkers) {
@@ -389,7 +499,7 @@ public class EarthquakeCityMap extends PApplet {
             marker.setHidden(false);
         }
             
-        for(Marker marker : cityMarkers) {
+        for(Marker marker : poiMarkers) {
             marker.setHidden(false);
         }
     }

@@ -1,23 +1,44 @@
 package project;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.management.RuntimeErrorException;
+
 import de.fhpotsdam.unfolding.data.Feature;
 import de.fhpotsdam.unfolding.data.PointFeature;
 import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
+import processing.core.PConstants;
 import processing.core.PGraphics;
+import processing.core.PImage;
 
-class CityMarker extends POIMarker {
+class AirportMarker extends POIMarker {
+    PImage indicator = new PImage(load("plane.png"));
     
-    // The size of the triangle marker
-    // It's a good idea to use this variable in your draw method
-    public static final int TRI_SIZE = 5;
+    static Image load(String fName) {
+        try {
+            BufferedImage image = ImageIO.read(new File(fName));
+            BufferedImage dest = new BufferedImage(image.getWidth(), image.getHeight(),
+                                                   BufferedImage.TYPE_INT_ARGB);
+            dest.getGraphics().drawImage(image, 0, 0, null);
+
+            return dest;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Error(e);
+        }
+    }
     
-    public CityMarker(Location location) {
+    public AirportMarker(Location location) {
         super(location);
     }
     
     
-    public CityMarker(Feature city) {
+    public AirportMarker(Feature city) {
         super(((PointFeature)city).getLocation(), city.getProperties());
     }
     
@@ -33,15 +54,16 @@ class CityMarker extends POIMarker {
      * Implementation of method to draw marker on the map.
      */
     public void drawMarker(PGraphics pg, float x, float y) {
-        // Save previous drawing style
-        pg.pushStyle();
-        
-        pg.fill(isThreatened() ? 0xFFF00000 : 0xFF8F00FF);
-        pg.triangle(x-TRI_SIZE, y+TRI_SIZE, x+TRI_SIZE, y+TRI_SIZE, x, y-TRI_SIZE);
-        // TODO: Add code to draw a triangle to represent the CityMarker
-        
-        // Restore previous drawing style
-        pg.popStyle();
+        if (isThreatened()) {
+            // Save previous drawing style
+            pg.pushStyle();
+            
+            pg.imageMode(PConstants.CENTER);
+            pg.image(indicator, x, y);
+            
+            // Restore previous drawing style
+            pg.popStyle();
+        }
     }
     
     /* Local getters for some city properties.  You might not need these 
@@ -55,15 +77,11 @@ class CityMarker extends POIMarker {
     {
         return getStringProperty("country");
     }
-    
-    public float getPopulation()
-    {
-        return Float.parseFloat(getStringProperty("population"));
-    }
 
 
     @Override
     public String getTitle() {
-        return getCity() + " - Pop: " + getPopulation();
+        return getCity();
     }
+   
 }

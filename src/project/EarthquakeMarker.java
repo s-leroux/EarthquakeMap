@@ -5,11 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.fhpotsdam.unfolding.geo.Location;
-import de.fhpotsdam.unfolding.marker.SimplePointMarker;
-import de.fhpotsdam.unfolding.utils.GeoUtils;
 import processing.core.PApplet;
-import processing.core.PGraphics;
 
+/**
+ * A marker class to display earthquakes on the map.
+ * 
+ * @author Sylvain
+ *
+ */
 abstract class EarthquakeMarker extends CommonMarker implements Comparable<EarthquakeMarker> {
     // constants for distance
     protected static final float kmPerMile = 1.6f;
@@ -18,7 +21,10 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
     private final float magnitude;
     private final float depth;
     private final int   age;
-    
+   
+    /**
+     * Mapping between magnitude and color of the marker
+     */
     static final int colors[] = {
       /*  0 */ 0x005AFF05,
       /*  1 */ 0x007AF005,
@@ -33,6 +39,9 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
       /* 10 */ 0x00F00505
     };
     
+    /**
+     * Mapping between "age" of an event and its transparency level
+     */
     static final Map<String, Integer> ageToNum;
     static {
         Map<String, Integer> m = new HashMap<>();
@@ -44,6 +53,15 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
         ageToNum = Collections.unmodifiableMap(m);
     }
     
+    /**
+     * Instantiate a new EarthquakeMarker with the given attributes.
+     * 
+     * @param location
+     * @param magnitude
+     * @param depth
+     * @param age
+     * @param properties Additional properties passed to the UnfoldingMap library
+     */
     public EarthquakeMarker(Location location, float magnitude, float depth, String age,
                             HashMap<String,Object> properties) {
       super(location, properties);
@@ -54,6 +72,12 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
       this.age = ageToNum.getOrDefault(age, 0);
     }
     
+    /**
+     * Utility method. Calculate the color of the marker based on various attributes
+     * of the earthquake.
+     * 
+     * @return An ARGB color used to display that earthquake
+     */
     public int getColor() {
         float color = PApplet.map(magnitude, 0, 10, 0, 10);
         int opacity = (isSelected()) ? 255 : 50*(age+1);
@@ -61,6 +85,12 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
         return (opacity << 24) | colors[Math.round(color)];
     }
     
+    /**
+     * Utility method. Calculate the color of the frame of the marker.
+     * The frame color is the same as the fill color, but with full opacity.
+     * 
+     * @return An ARGB color whose alpha component is 0xFF
+     */
     public int getFrameColor() {
         return (isSelected()) ? 0xFF000000 : getColor();
     }
@@ -83,6 +113,14 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
     {
         return getStringProperty("age");
     }    
+    
+    /**
+     * For testing purposes only
+     */
+    int getAgeNum() {
+        return this.age;
+    }
+    
     public float getMagnitude()
     {
         return magnitude;
@@ -91,9 +129,10 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
     /**
      * Return the "threat circle" radius, or distance up to 
      * which this earthquake can affect things, for this earthquake.   
-     * DISCLAIMER: this formula is for illustration purposes
-     *  only and is not intended to be used for safety-critical 
+     * DISCLAIMER: this is not intended to be used for safety-critical 
      *  or predictive applications.
+     *  
+     *  @author UC San Diego (public domain)
      */
     public double threatCircle() {  
         double miles = 20.0f * Math.pow(1.8, 2*getMagnitude()-5);
@@ -101,6 +140,9 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
         return km;
     }
     
+    /**
+     * Return the title as displayed in the infobox when hovering over that event marker.
+     */
     @Override
     public String getTitle() {
         return "" + getMagnitude() + " - " + getCountry() 
@@ -109,6 +151,12 @@ abstract class EarthquakeMarker extends CommonMarker implements Comparable<Earth
         
     } 
     
+    /**
+     * Order EarthQuake markers. Used to sort events for display/reporting purpose
+     * 
+     * TODO: should refactor this to separate the "Earthquake" model object from the 
+     * "EarthquakeMarker" view object.
+     */
     @Override
     public int compareTo(EarthquakeMarker o) {
         if (magnitude < o.magnitude)
