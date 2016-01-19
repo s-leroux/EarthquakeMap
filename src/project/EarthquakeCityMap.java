@@ -3,29 +3,21 @@ package project;
 //Java utilities libraries
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
-import org.omg.CORBA.FloatSeqHelper;
-
-//Processing library
-import processing.core.PApplet;
-import processing.core.PGraphics;
 //Unfolding libraries
 import de.fhpotsdam.unfolding.UnfoldingMap;
-import de.fhpotsdam.unfolding.marker.AbstractShapeMarker;
-import de.fhpotsdam.unfolding.marker.Marker;
-import de.fhpotsdam.unfolding.marker.MultiMarker;
 import de.fhpotsdam.unfolding.data.Feature;
 import de.fhpotsdam.unfolding.data.GeoJSONReader;
 import de.fhpotsdam.unfolding.data.PointFeature;
-import de.fhpotsdam.unfolding.events.MapEventBroadcaster;
 import de.fhpotsdam.unfolding.geo.Location;
-import de.fhpotsdam.unfolding.marker.SimplePointMarker;
+import de.fhpotsdam.unfolding.marker.AbstractShapeMarker;
+import de.fhpotsdam.unfolding.marker.Marker;
+import de.fhpotsdam.unfolding.marker.MultiMarker;
 import de.fhpotsdam.unfolding.providers.Google;
 import de.fhpotsdam.unfolding.providers.MBTilesMapProvider;
 import de.fhpotsdam.unfolding.utils.GeoUtils;
@@ -33,6 +25,9 @@ import de.fhpotsdam.unfolding.utils.MapUtils;
 import de.fhpotsdam.unfolding.utils.ScreenPosition;
 //Parsing library
 import parsing.ParseFeed;
+//Processing library
+import processing.core.PApplet;
+import processing.core.PGraphics;
 
 /** EarthquakeCityMap
  * An application with an interactive map displaying earthquake data.
@@ -148,7 +143,6 @@ public class EarthquakeCityMap extends PApplet {
 
     // A suggested helper method that takes in an earthquake feature and 
 	// returns a EarthquakeMarker for that earthquake
-	// TODO: Implement this method and call it from setUp, if it helps
 	private EarthquakeMarker createMarker(PointFeature pointFeature)
 	{
         float mag = Float.parseFloat(pointFeature.getProperty("magnitude").toString());
@@ -184,7 +178,7 @@ public class EarthquakeCityMap extends PApplet {
 	    background(200);
 	    map.draw();
 	    
-	    // TODO: this is ugly !
+	    // FIXME: this is ugly !
 	    // Unfortunately, a marker instance does not have a reference to its map
 	    // when drawing, so it cannot easily maps arbitrary location to screen positions
         if (quake != null)
@@ -246,7 +240,6 @@ public class EarthquakeCityMap extends PApplet {
 
 
 	// helper method to draw key in GUI
-	// TODO: Implement this method to draw the key
 	private void addKey(TreeMap<Double, POIMarker> threatened) 
 	{	
 	    fill(255,255,255);

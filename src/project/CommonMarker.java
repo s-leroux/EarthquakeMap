@@ -2,6 +2,7 @@ package project;
 
 import de.fhpotsdam.unfolding.geo.Location;
 import de.fhpotsdam.unfolding.marker.SimplePointMarker;
+import processing.core.PConstants;
 import processing.core.PGraphics;
 
 /** Implements a common marker for cities and earthquakes on an earthquake map
@@ -60,7 +61,7 @@ public abstract class CommonMarker extends SimplePointMarker {
         pg.fill(0xFFEBDFAE);
         pg.rect(x-5-tw/2, y-5-pg.textAscent(), tw + 10, th+10);
         pg.fill(0,0,0);
-        pg.textAlign(pg.LEFT);
+        pg.textAlign(PConstants.LEFT);
         pg.text(title, x-tw/2, y);
         pg.popStyle();
     }

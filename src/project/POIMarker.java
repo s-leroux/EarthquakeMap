@@ -3,8 +3,6 @@ package project;
 import de.fhpotsdam.unfolding.data.Feature;
 import de.fhpotsdam.unfolding.data.PointFeature;
 import de.fhpotsdam.unfolding.geo.Location;
-import de.fhpotsdam.unfolding.marker.SimplePointMarker;
-import processing.core.PGraphics;
 
 abstract class POIMarker extends CommonMarker {
     private boolean threatened = false;  
